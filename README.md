@@ -87,7 +87,7 @@ Create Subnet:
 SUBNET_ID=$(aws ec2 create-subnet \
   --vpc-id ${VPC_ID} \
   --cidr-block 10.240.0.0/24 \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=kubernetes-the-hard-way}]' \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=kubernetes-the-hard-way},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]' \
   --output text --query 'Subnet.SubnetId')
 ```
 
@@ -95,7 +95,7 @@ Create Internet Gateway:
 
 ```sh
 INTERNET_GATEWAY_ID=$(aws ec2 create-internet-gateway \
-  --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=kubernetes-the-hard-way}]' \
+  --tag-specifications 'ResourceType=internet-gateway,Tags=[{Key=Name,Value=kubernetes-the-hard-way},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]' \
   --output text --query 'InternetGateway.InternetGatewayId')
 
 aws ec2 attach-internet-gateway \
@@ -108,7 +108,7 @@ Create Route Table:
 ```sh
 ROUTE_TABLE_ID=$(aws ec2 create-route-table \
   --vpc-id ${VPC_ID} \
-  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=kubernetes-the-hard-way}]' \
+  --tag-specifications 'ResourceType=route-table,Tags=[{Key=Name,Value=kubernetes-the-hard-way},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]' \
   --output text --query 'RouteTable.RouteTableId')
 
 aws ec2 associate-route-table \
@@ -128,18 +128,23 @@ SECURITY_GROUP_ID=$(aws ec2 create-security-group \
   --group-name kubernetes-the-hard-way \
   --description "Kubernetes The Hard Way security group" \
   --vpc-id ${VPC_ID} \
-  --tag-specifications 'ResourceType=security-group,Tags=[{Key=Name,Value=kubernetes-the-hard-way}]' \
+  --tag-specifications 'ResourceType=security-group,Tags=[{Key=Name,Value=kubernetes-the-hard-way},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]' \
   --output text --query 'GroupId')
 
 aws ec2 authorize-security-group-ingress \
   --group-id ${SECURITY_GROUP_ID} \
   --protocol all \
-  --cidr 10.240.0.0/24
+  --cidr 10.0.0.0/8
 
 aws ec2 authorize-security-group-ingress \
   --group-id ${SECURITY_GROUP_ID} \
   --protocol all \
-  --cidr 10.200.0.0/16
+  --cidr 172.16.0.0/12
+  
+aws ec2 authorize-security-group-ingress \
+  --group-id ${SECURITY_GROUP_ID} \
+  --protocol all \
+  --cidr 192.168.0.0/16
 
 aws ec2 authorize-security-group-ingress \
   --group-id ${SECURITY_GROUP_ID} \
@@ -191,7 +196,7 @@ Output:
 ```sh
 ALLOCATION_ID=$(aws ec2 allocate-address \
   --domain vpc \
-  --tag-specifications 'ResourceType=elastic-ip,Tags=[{Key=Name,Value=kubernetes-the-hard-way}]' \
+  --tag-specifications 'ResourceType=elastic-ip,Tags=[{Key=Name,Value=kubernetes-the-hard-way},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]' \
   --output text --query 'AllocationId')
 ```
 
@@ -243,7 +248,7 @@ for i in 0 1 2; do
     --private-ip-address 10.240.0.1${i} \
     --user-data "name=controller-${i}" \
     --subnet-id ${SUBNET_ID} \
-    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=controller-${i}}]" \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=controller-${i}},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]" \
     --output text --query 'Instances[].InstanceId')
 
   aws ec2 modify-instance-attribute \
@@ -266,7 +271,7 @@ for i in 0 1 2; do
     --private-ip-address 10.240.0.2${i} \
     --user-data "name=worker-${i}|pod-cidr=10.200.${i}.0/24" \
     --subnet-id ${SUBNET_ID} \
-    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=worker-${i}}]" \
+    --tag-specifications "ResourceType=instance,Tags=[{Key=Name,Value=worker-${i}},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]" \
     --output text --query 'Instances[].InstanceId')
 
   aws ec2 modify-instance-attribute \
@@ -666,7 +671,7 @@ LOAD_BALANCER_ARN=$(aws elbv2 create-load-balancer \
   --subnet-mappings SubnetId=${SUBNET_ID},AllocationId=${KUBERNETES_PUBLIC_ADDRESS_ALLOCATION_ID} \
   --scheme internet-facing \
   --type network \
-  --tags 'Key=Name,Value=kubernetes-the-hard-way' \
+  --tags '[{Key=Name,Value=kubernetes-the-hard-way],{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]' \
   --output text --query 'LoadBalancers[].LoadBalancerArn')
 
 TARGET_GROUP_ARN=$(aws elbv2 create-target-group \
@@ -678,7 +683,7 @@ TARGET_GROUP_ARN=$(aws elbv2 create-target-group \
   --health-check-protocol HTTP \
   --health-check-port 80 \
   --health-check-path /healthz \
-  --tags 'Key=Name,Value=kubernetes-the-hard-way' \
+  --tags '[{Key=Name,Value=kubernetes-the-hard-way},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}' \
   --output text --query 'TargetGroups[].TargetGroupArn')
 
 aws elbv2 register-targets \
@@ -690,7 +695,7 @@ aws elbv2 create-listener \
   --protocol TCP \
   --port 6443 \
   --default-actions Type=forward,TargetGroupArn=${TARGET_GROUP_ARN} \
-  --tags 'Key=Name,Value=kubernetes-the-hard-way' \
+  --tags '[{Key=Name,Value=kubernetes-the-hard-way},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}' \
   --output text --query 'Listeners[].ListenerArn'
 ```
 
