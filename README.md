@@ -12,6 +12,8 @@ highlights differences from the original guide.
 The intent of this page is similar to the original guide. My motivation to
 create it has been to learn more about AWS and Kubernetes.
 
+This branch updates all packages to the latest releases and installs the [aws-load-balancer-controller](https://github.com/kubernetes-sigs/aws-load-balancer-controller) to help manage Elastic Load Balancers for a Kubernetes cluster.
+
 ## Labs
 
 * [Prerequisites](#prerequisites)
@@ -67,7 +69,7 @@ Create VPC:
 ```sh
 VPC_ID=$(aws ec2 create-vpc \
   --cidr-block 10.240.0.0/24 \
-  --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=kubernetes-the-hard-way}]' \
+  --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=kubernetes-the-hard-way,Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]' \
   --output text --query 'Vpc.VpcId')
 
 aws ec2 modify-vpc-attribute \
