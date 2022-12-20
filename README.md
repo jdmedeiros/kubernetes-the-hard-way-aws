@@ -87,7 +87,7 @@ Create Subnet:
 SUBNET_ID=$(aws ec2 create-subnet \
   --vpc-id ${VPC_ID} \
   --cidr-block 10.240.0.0/24 \
-  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=kubernetes-the-hard-way},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]' \
+  --tag-specifications 'ResourceType=subnet,Tags=[{Key=Name,Value=kubernetes-the-hard-way},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared},{Key=kubernetes.io/role/internal-elb,Value=1}]' \
   --output text --query 'Subnet.SubnetId')
 ```
 
@@ -163,6 +163,12 @@ aws ec2 authorize-security-group-ingress \
   --protocol icmp \
   --port -1 \
   --cidr 0.0.0.0/0
+  
+aws ec2 authorize-security-group-ingress \
+  --group-id ${SECURITY_GROUP_ID} \
+  --protocol tcp \
+  --port 9443 \
+  --cidr 10.0.0.0/8
 ```
 
 List the created security group rules:
