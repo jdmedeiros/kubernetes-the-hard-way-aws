@@ -69,7 +69,7 @@ Create VPC:
 ```sh
 VPC_ID=$(aws ec2 create-vpc \
   --cidr-block 10.240.0.0/24 \
-  --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=kubernetes-the-hard-way,Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]' \
+  --tag-specifications 'ResourceType=vpc,Tags=[{Key=Name,Value=kubernetes-the-hard-way},{Key=kubernetes.io/cluster/kubernetes-the-hard-way,Value=shared}]' \
   --output text --query 'Vpc.VpcId')
 
 aws ec2 modify-vpc-attribute \
